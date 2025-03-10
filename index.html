@@ -1,0 +1,51 @@
+<!-- 取得 process.php 的回應，並顯示在 網頁上 -->
+<!-- 前端送資料 → PHP 發送 API → 回應給前端 -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 聊天機器人</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        textarea { width: 80%; height: 100px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        #response { margin-top: 20px; font-size: 18px; color: #333; text-align: left; width: 80%; margin-left: auto; margin-right: auto; }
+    </style>
+    <!-- <link rel="stylesheet" href="./index.css"> -->
+</head>
+<body>
+    <h2>AI 聊天機器人 (Hugging Face API)</h2>
+
+    <form id="chat-form">
+        <textarea name="user_input" id="user_input" placeholder="輸入你的問題..."></textarea><br><br>
+        <button type="submit">發送</button>
+    </form>
+    
+    <div id="response"></div>
+
+    <script>
+        document.getElementById("chat-form").addEventListener("submit", function(event) {
+            event.preventDefault();  // 阻止表單提交
+
+            let userInput = document.getElementById("user_input").value;
+            let formData = new FormData(); // 建立一個 表單數據物件，用來存放要發送的資料
+            formData.append("user_input", userInput);
+
+            fetch("process.php", {
+                method: "POST",
+                body: formData
+            })
+            // then 是非同步
+            .then(response => response.text()) // 取得 PHP `echo` 的回應
+            .then(data => {
+                document.getElementById("response").innerHTML = "<h3>AI 回應：</h3><p>" + data + "</p>";
+            })
+            .catch(error => {
+                document.getElementById("response").innerHTML = "<p style='color: red;'>發生錯誤，請稍後再試！</p>";
+                console.error("錯誤:", error);
+            });
+        });
+    </script>
+</body>
+</html>
