@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 // 確保請求方式為 POST
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
-    echo "請使用 POST 方式傳送資料";
+    echo json_encode(["error" => "請使用 POST 方式傳送資料"]);
     exit;
 }
 
@@ -13,22 +13,23 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 $user_input = $_POST["user_input"] ?? "";
 $chat_history = json_decode($_POST["chat_history"] ?? "[]", true); // 🔥 來自前端的對話紀錄
 
-// 檢查是否有輸入
-if (empty($user_input)) {
-    echo "請輸入內容";
+// **檢查 API 是否有收到 `chat_history`**
+if (!is_array($chat_history)) {
+    echo json_encode(["error" => "無效的對話紀錄格式"]);
     exit;
 }
 
 // 🔥 **確保每次請求都帶上 "system" 訊息**
 $messages = [
-    ["role" => "system", "content" => "用繁體中文回答問題"]
+    ["role" => "system", "content" => "請用繁體中文回答問題"]
 ];
 
-// 🔥 **合併前端傳來的歷史對話，但不重複 user 輸入**
+// **合併前端傳來的歷史對話，但不重複加入 user 訊息**
 foreach ($chat_history as $message) {
-    if ($message["role"] !== "user") { // 避免重複加入 user 訊息
-        $messages[] = $message;
+    if (!isset($message["role"]) || !isset($message["content"])) {
+        continue; // 過濾錯誤訊息
     }
+    $messages[] = $message;
 }
 
 // **加入當前使用者輸入**
@@ -45,10 +46,10 @@ $headers = [
 
 // **發送請求**
 $data = json_encode([
-    "model" => "llama-3.1-8b-instant",
-    "messages" => $messages, // 🔥 帶上 "system" + 歷史紀錄
+    "model" => "llama3-8b-8192",
+    "messages" => $messages, // 🔥 確保 messages 內有正確內容
     "temperature" => 0.7,
-    "max_tokens" => 500
+    "max_tokens" => 200
 ]);
 
 $ch = curl_init();
@@ -62,22 +63,21 @@ $response = curl_exec($ch);
 $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-// 確保 API 回應正常
+// **檢查 API 是否回應錯誤**
 if (!$response) {
     echo json_encode(["error" => "API 請求失敗"]);
     exit;
 }
 
-// 解析 JSON
 $decoded_response = json_decode($response, true);
 
-// 檢查 API 是否回應錯誤
+// **檢查 API 是否有錯誤回應**
 if ($http_status !== 200) {
     echo json_encode(["error" => "API 錯誤（狀態碼 $http_status）", "response" => $response]);
     exit;
 }
 
-// **取得 AI 回應並加入歷史紀錄**
+// **取得 AI 回應**
 $ai_response = $decoded_response["choices"][0]["message"]["content"] ?? "無法取得 AI 回應";
 $messages[] = ["role" => "assistant", "content" => $ai_response]; // 🔥 加入 AI 回應
 
