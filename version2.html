@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 聊天機器人 (Groq API)</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        textarea { width: 80%; height: 100px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        #response { 
+            margin-top: 20px; 
+            font-size: 18px; 
+            color: #333; 
+            text-align: left; 
+            width: 80%; 
+            margin-left: auto; 
+            margin-right: auto; 
+            background: #f9f9f9; 
+            padding: 15px; 
+            border-radius: 5px; 
+        }
+    </style>
+</head>
+<body>
+    <h2>AI 聊天機器人 (Groq API)</h2>
+
+    <form id="chat-form">
+        <textarea name="user_input" id="user_input" placeholder="輸入你的問題..."></textarea><br><br>
+        <button type="submit">發送</button>
+    </form>
+    
+    <div id="response"></div>
+
+    <script>
+        document.getElementById("chat-form").addEventListener("submit", function(event) {
+            event.preventDefault();  // 阻止表單預設提交
+
+            let userInput = document.getElementById("user_input").value;
+            if (!userInput.trim()) {
+                document.getElementById("response").innerHTML = "<p style='color: red;'>請輸入內容！</p>";
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("user_input", userInput);
+
+            document.getElementById("response").innerHTML = "<p style='color: blue;'>AI 思考中...</p>";
+
+            fetch("process.php", { // 確保這裡的 URL 指向正確的 `process.php`
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("response").innerHTML = "<h3>AI 回應：</h3><p>" + data + "</p>";
+            })
+            .catch(error => {
+                document.getElementById("response").innerHTML = "<p style='color: red;'>發生錯誤，請稍後再試！</p>";
+                console.error("錯誤:", error);
+            });
+        });
+    </script>
+</body>
+</html>

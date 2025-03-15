@@ -1,60 +1,86 @@
-<!-- 接收 POST 請求，取得使用者輸入
-發送 API 請求 到 Hugging Face
-解析 AI 回應，然後 echo 給 JavaScript -->
-<!-- 前端送資料 → PHP 發送 API → 回應給前端 -->
 <?php
-error_reporting(E_ALL); // 顯示所有類型的錯誤
-ini_set('display_errors', 1); // 確保錯誤資訊顯示在網頁上
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $user_input = $_POST["user_input"];  // 獲取使用者輸入
-    $api_url = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3";
-    $api_token = "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";  // Hugging Face API Key
-
-    // HTTP 標頭（Headers）是在 客戶端（Client）和伺服器（Server）之間傳輸的額外資訊
-    $headers = array(
-        "Authorization: Bearer $api_token", // 使用 API 金鑰來驗證請求 bearer 表示請求是「攜帶 Token」的授權請求
-        "Content-Type: application/json" // 指定請求的內容類型為 JSON 傳送的資料格式
-    );
-
-    $data = json_encode([ // 將 PHP 陣列轉換成 JSON 字串
-        "inputs" => $user_input,
-        "parameters" => [
-            "max_length" => 500 // 限制 AI 回應的最大長度為 500 個 token
-        ]
-    ]);
-
-    // 是一個強大的擴展庫，允許你透過網路請求來與遠端伺服器進行資料傳輸
-    //  cURL 擴展提供的內建常數
-    // curl_setopt(資源變數, 設定選項, 設定值) : 設定函數
-    $ch = curl_init(); // 初始化
-    curl_setopt($ch, CURLOPT_URL, $api_url); // 設定 API URL
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // 讓回應結果以字串回傳，而不是直接輸出
-    curl_setopt($ch, CURLOPT_POST, 1); // 1（或 true）代表啟用 POST 模式
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data); // 設定要發送的資料
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);// CURLOPT_HTTPHEADER 參數必須是 陣列格式
-
-    $response = curl_exec($ch); // 存取回應
-    $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE); // 代表 API 回應的 HTTP 狀態碼，可以用來判斷請求是否成功
-    curl_close($ch);
-
-    if (!$response) {
-        die("cURL 執行失敗，請檢查 API 請求是否正確");
-    }
-
-    $decoded_response = json_decode($response, true); // 解析 JSON 回應，並轉換為關聯陣列
-
-    if ($http_status !== 200) {
-        echo "API 錯誤（狀態碼 $http_status）";
-        exit;
-    }
-    // nl2br() 會把換行符 \n 轉換成 HTML <br>，確保換行格式正確顯示
-    if (isset($decoded_response[0]['generated_text'])) {
-        echo nl2br(htmlspecialchars($decoded_response[0]['generated_text']));
-    } else {
-        echo "API 無法解析回應，請稍後再試。";
-    }
-} else {
+// 確保請求方式為 POST
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    http_response_code(405);
     echo "請使用 POST 方式傳送資料";
+    exit;
 }
+
+// 取得使用者輸入 & 來自前端的歷史紀錄
+$user_input = $_POST["user_input"] ?? "";
+$chat_history = json_decode($_POST["chat_history"] ?? "[]", true); // 🔥 來自前端的對話紀錄
+
+// 檢查是否有輸入
+if (empty($user_input)) {
+    echo "請輸入內容";
+    exit;
+}
+
+// 🔥 **確保每次請求都帶上 "system" 訊息**
+$messages = [
+    ["role" => "system", "content" => "用繁體中文回答問題"]
+];
+
+// 🔥 **合併前端傳來的歷史對話，但不重複 user 輸入**
+foreach ($chat_history as $message) {
+    if ($message["role"] !== "user") { // 避免重複加入 user 訊息
+        $messages[] = $message;
+    }
+}
+
+// **加入當前使用者輸入**
+$messages[] = ["role" => "user", "content" => $user_input];
+
+// **API 設置**
+$api_url = "https://api.groq.com/openai/v1/chat/completions";
+$api_token = "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"; // 🔥 請填入你的 API Key
+
+$headers = [
+    "Authorization: Bearer $api_token",
+    "Content-Type: application/json"
+];
+
+// **發送請求**
+$data = json_encode([
+    "model" => "llama-3.1-8b-instant",
+    "messages" => $messages, // 🔥 帶上 "system" + 歷史紀錄
+    "temperature" => 0.7,
+    "max_tokens" => 500
+]);
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $api_url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+$response = curl_exec($ch);
+$http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+// 確保 API 回應正常
+if (!$response) {
+    echo json_encode(["error" => "API 請求失敗"]);
+    exit;
+}
+
+// 解析 JSON
+$decoded_response = json_decode($response, true);
+
+// 檢查 API 是否回應錯誤
+if ($http_status !== 200) {
+    echo json_encode(["error" => "API 錯誤（狀態碼 $http_status）", "response" => $response]);
+    exit;
+}
+
+// **取得 AI 回應並加入歷史紀錄**
+$ai_response = $decoded_response["choices"][0]["message"]["content"] ?? "無法取得 AI 回應";
+$messages[] = ["role" => "assistant", "content" => $ai_response]; // 🔥 加入 AI 回應
+
+// **回傳 JSON 給前端**
+echo json_encode(["chat_history" => $messages]);
 ?>

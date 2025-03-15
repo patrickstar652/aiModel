@@ -1,51 +1,94 @@
-<!-- 取得 process.php 的回應，並顯示在 網頁上 -->
-<!-- 前端送資料 → PHP 發送 API → 回應給前端 -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 聊天機器人</title>
+    <title>AI 聊天機器人 (Groq API)</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
         textarea { width: 80%; height: 100px; }
         button { padding: 10px 20px; font-size: 16px; }
-        #response { margin-top: 20px; font-size: 18px; color: #333; text-align: left; width: 80%; margin-left: auto; margin-right: auto; }
+        #chat-box {
+            margin-top: 20px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 300px;
+            overflow-y: auto;
+        }
     </style>
-    <!-- <link rel="stylesheet" href="./index.css"> -->
 </head>
 <body>
-    <h2>AI 聊天機器人 (Hugging Face API)</h2>
+    <h2>AI 聊天機器人 (Groq API)</h2>
 
     <form id="chat-form">
         <textarea name="user_input" id="user_input" placeholder="輸入你的問題..."></textarea><br><br>
         <button type="submit">發送</button>
     </form>
     
-    <div id="response"></div>
+    <div id="chat-box"></div>
 
     <script>
+        let chatHistory = []; // 🔥 存放對話紀錄（只在當前頁面有效）
+
         document.getElementById("chat-form").addEventListener("submit", function(event) {
-            event.preventDefault();  // 阻止表單提交
+            event.preventDefault();
 
-            let userInput = document.getElementById("user_input").value;
-            let formData = new FormData(); // 建立一個 表單數據物件，用來存放要發送的資料
+            let userInput = document.getElementById("user_input").value.trim();
+            if (!userInput) {
+                alert("請輸入內容！");
+                return;
+            }
+
+            // 🔥 先顯示使用者輸入（避免 `fetch` 內重複 push）
+            chatHistory.push({ role: "user", content: userInput });
+            updateChatBox();
+            document.getElementById("user_input").value = ""; // 清空輸入框
+
+            let formData = new FormData();
             formData.append("user_input", userInput);
+            formData.append("chat_history", JSON.stringify(chatHistory)); // 🔥 傳送對話紀錄
 
-            fetch("process.php", {
-                method: "POST",
-                body: formData
-            })
-            // then 是非同步
-            .then(response => response.text()) // 取得 PHP `echo` 的回應
+            fetch("process.php", { method: "POST", body: formData })
+            .then(response => response.json())
             .then(data => {
-                document.getElementById("response").innerHTML = "<h3>AI 回應：</h3><p>" + data + "</p>";
+                if (data.error) {
+                    document.getElementById("chat-box").innerHTML += `<p style='color: red;'>錯誤：${data.error}</p>`;
+                    return;
+                }
+
+                // 🔥 避免重複 push，僅加入新的 AI 回應
+                let newMessages = data.chat_history.slice(chatHistory.length);
+                newMessages.forEach(message => {
+                    if (message.role === "assistant") {
+                        chatHistory.push(message);
+                    }
+                });
+
+                updateChatBox();
             })
             .catch(error => {
-                document.getElementById("response").innerHTML = "<p style='color: red;'>發生錯誤，請稍後再試！</p>";
+                document.getElementById("chat-box").innerHTML += "<p style='color: red;'>發生錯誤，請稍後再試！</p>";
                 console.error("錯誤:", error);
             });
         });
+
+        // 🔥 更新聊天視窗
+        function updateChatBox() {
+            let chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = ""; // 先清空
+            chatHistory.forEach(message => {
+                if (message.role === "user") {
+                    chatBox.innerHTML += `<p><strong>你：</strong> ${message.content}</p>`;
+                } else if (message.role === "assistant") {
+                    chatBox.innerHTML += `<p><strong>AI：</strong> ${message.content}</p>`;
+                }
+            });
+        }
     </script>
 </body>
 </html>
