@@ -4,33 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 聊天機器人 (Groq API)</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
-        textarea { width: 80%; height: 100px; }
-        button { padding: 10px 20px; font-size: 16px; }
-        #chat-box {
-            margin-top: 20px;
-            width: 80%;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: left;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            min-height: 300px;
-            overflow-y: auto;
-        }
-    </style>
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <h2>AI 聊天機器人 (Groq API)</h2>
+    <h2>
+        <span>開</span>
+        <span>始</span>
+        <span>聊</span>
+        <span>天</span>
+        <span>！</span>
+    </h2>
 
+    <div id="chat-box"></div>
+    <br>
+    <br>
     <form id="chat-form">
         <textarea name="user_input" id="user_input" placeholder="輸入你的問題..."></textarea><br><br>
         <button type="submit">發送</button>
     </form>
-    
-    <div id="chat-box"></div>
 
     <script>
         let chatHistory = []; // 🔥 存放對話紀錄（只在當前頁面有效）
@@ -77,17 +68,29 @@
             });
         });
 
-        // 🔥 更新聊天視窗
+        // 🔥 更新聊天視窗（加上聊天氣泡）
         function updateChatBox() {
             let chatBox = document.getElementById("chat-box");
             chatBox.innerHTML = ""; // 先清空
             chatHistory.forEach(message => {
+                let messageDiv = document.createElement("div");
+                messageDiv.classList.add("message-container");
+
+                let contentDiv = document.createElement("div");
+                contentDiv.textContent = message.content;
+                
                 if (message.role === "user") {
-                    chatBox.innerHTML += `<p><strong>你：</strong> ${message.content}</p>`;
+                    contentDiv.classList.add("user-message");
                 } else if (message.role === "assistant") {
-                    chatBox.innerHTML += `<p><strong>AI：</strong> ${message.content}</p>`;
+                    contentDiv.classList.add("ai-message");
                 }
+
+                messageDiv.appendChild(contentDiv);
+                chatBox.appendChild(messageDiv);
             });
+
+            // 🔥 讓視窗自動滾動到最新對話
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
