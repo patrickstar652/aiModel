@@ -1,0 +1,94 @@
+html {
+    font-size: 10px;
+}
+
+#content {
+    width: 100rem;
+    height: 45rem;
+    background-image: url('https://thumb.ac-illust.com/30/304555f77df075fe2e9d274722df6086_t.jpeg'); 
+    background-size: contain; /* 讓整張圖片完整顯示 */
+    background-position: center; 
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    box-sizing: border-box;
+}
+
+.word {
+    font-size: 4rem;
+    height: 1rem;
+    line-height: 1.5;
+    font-weight: bold;
+    padding-bottom: 11rem;
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 4px solid black;
+    width: 0;
+    animation: typing 3s steps(30) 1s 1 normal both, blinkCursor 0.75s step-end infinite, hideCursor 0s 1 3s forwards;
+}
+
+button {
+    width: 15rem;
+    height: 6rem;
+    background-color: #a0a6fb;
+    cursor: pointer;
+    font-size: 2rem;
+    border: none;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 2rem auto;
+    color: white;
+    
+}
+
+/* .push {
+    width: 100rem;
+    height: 45rem;
+    background-image: url('https://thumb.ac-illust.com/30/304555f77df075fe2e9d274722df6086_t.jpeg'); 
+    background-size: contain; /* 讓整張圖片完整顯示 */
+    /* background-position: center; 
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    margin-left: 260rem;
+}  */
+
+@keyframes typing {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+@keyframes hideCursor {
+    100% {
+        border-right-color: transparent;
+    }
+}
+
+@keyframes blinkCursor {
+    0% {
+        border-right-color: rgba(0, 0, 0, 1);
+    }
+    50% {
+        border-right-color: rgba(0, 0, 0, 0);
+    }
+    100% {
+        border-right-color: rgba(0, 0, 0, 1);
+    }
+}

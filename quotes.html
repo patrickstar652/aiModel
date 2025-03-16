@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="quotes.css">
+  </head>
+  <body>
+    <div id="content">
+
+    </div>
+
+    <button onclick="setTimeout(quoteContent, 2000)" type="submit">抽籤</button>
+
+    <script>
+      function quoteContent() {
+        let min = 0;
+        let max = 4;
+        let randomInt = Math.floor(Math.random() * (max - min + 1)) + min;
+        const a = `「成功的秘訣在於堅持不懈的努力<br>並始終相信自己能夠做到」`;
+        const b = `「每一天都是一個新的開始<br>抓住今天的機會<br>為明天奠定基礎」`;
+        const c = `「困難只是暫時的<br>勇氣和決心是永恆的」`;
+        const d = `「當你心中充滿感恩<br>整個世界都會變得更加美好」`;
+        const e = `「失敗並不可怕<br>重要的是你是否從中學到成長的力量」`;
+        let quote = [a, b, c, d, e];
+        document.querySelector("#content").innerHTML = `<p class="word">${quote[randomInt]}</p>`;
+      }
+      
+    </script>
+  </body>
+</html>
